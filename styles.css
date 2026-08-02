@@ -240,21 +240,14 @@ body.keyboard-navigating .task-item:hover:not(:focus) {
     background: var(--color-bg-hover);
 }
 
-/* Floating clone that follows the finger during a touch drag (see
-   setupTouchDragAndDrop / positionGhost). The real .task-item.dragging above
-   stays behind as the landing-slot placeholder; this carries the "picked up"
-   look instead. Position is driven purely by a transform set in JS. */
-.touch-drag-ghost {
-    position: fixed;
-    top: 0;
-    left: 0;
-    margin: 0;
-    box-sizing: border-box;
-    z-index: 10000;
-    pointer-events: none;
-    will-change: transform;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-    opacity: 0.95;
+/* Extra "picked up" cue for touch drags (see setupTouchDragAndDrop), where there's
+   no cursor change to signal grabbing. Scoped to coarse/no-hover pointers so
+   desktop's native drag ghost image is unaffected. */
+@media (hover: none) and (pointer: coarse) {
+    .task-item.dragging {
+        transform: scale(1.02);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
 }
 
 .task-url-link {
@@ -855,14 +848,11 @@ body.keyboard-navigating .task-item:hover:not(:focus) {
     cursor: grabbing;
 }
 
-/* The ghost clone (see .touch-drag-ghost above) is appended to <body>, so it
-   falls outside .subtask-list and would otherwise lose this accent-stripe
-   look and fall back to the plain top-level .task-item border/padding. */
-.touch-drag-ghost.touch-drag-ghost--subtask {
-    background: var(--color-bg-input);
-    border: none;
-    border-left: 3px solid var(--color-action);
-    padding: 8px;
+@media (hover: none) and (pointer: coarse) {
+    .subtask-list .task-item.dragging {
+        transform: scale(1.02);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    }
 }
 
 .subtask-list .task-item:active {

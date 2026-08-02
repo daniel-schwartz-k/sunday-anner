@@ -1,5 +1,5 @@
 // Dev version stamp — updated on every code change (format: YYYY-MM-DD HH:MM)
-const APP_VERSION = '2026-08-02 16:30 UTC';
+const APP_VERSION = '2026-08-02 15:00 UTC';
 
 let apiKey = localStorage.getItem('airtable-token');
 let baseId = localStorage.getItem('airtable-baseId');
@@ -789,13 +789,10 @@ class TaskManager {
         //
         // A ~200ms long-press arms the drag; a quick swipe (finger moves before the
         // timer fires) is left alone so native page/column scrolling still works.
-        // Once armed, a floating ghost clone tracks the raw finger position every
-        // frame, while the real .task-item stays in the DOM as the landing-slot
-        // placeholder, reordered live the same way the desktop dragover handlers do —
-        // so the card visually follows the finger everywhere but only "lands" over a
-        // valid slot. On release the same model methods used by desktop (moveTask,
-        // updateTaskOrder, moveTaskToSubtask, moveSubtaskToMainList,
-        // updateSubtaskOrder) are called to persist the result.
+        // Once armed, the real .task-item is reordered live in the DOM (same mechanic
+        // as the desktop dragover handlers), and on release the same model methods used
+        // by desktop (moveTask, updateTaskOrder, moveTaskToSubtask,
+        // moveSubtaskToMainList, updateSubtaskOrder) are called to persist the result.
         setupTouchDragAndDrop() {
             const LONG_PRESS_MS = 200;
             // Real touchscreens report a few px of jitter even when a finger is held
@@ -839,16 +836,6 @@ class TaskManager {
                 state.autoScrollRaf = requestAnimationFrame(step);
             };
 
-            // Ghost tracks the raw touch point every frame while the real .task-item
-            // (styled via .dragging) stays in the DOM as the landing-slot placeholder
-            // that processDragMove reorders. Keeps the "only lands on a valid slot"
-            // behavior while letting the card visually follow the finger everywhere,
-            // including between slots or off to the side.
-            const positionGhost = (state, x, y) => {
-                if (!state.ghost) return;
-                state.ghost.style.transform = `translate(${x - state.offsetX}px, ${y - state.offsetY}px) scale(1.03)`;
-            };
-
             // Arms the drag once the long-press fires: visually "picks up" the card and
             // suppresses panel click-outside/close handlers for the duration, mirroring
             // the desktop dragstart handlers above (.no-click / .dragging-subtask).
@@ -863,30 +850,11 @@ class TaskManager {
                     // see through the panel to the columns underneath while promoting.
                     document.getElementById('task-panel').classList.add('dragging-subtask');
                 }
-
-                const rect = state.el.getBoundingClientRect();
-                state.offsetX = state.startX - rect.left;
-                state.offsetY = state.startY - rect.top;
-                const ghost = state.el.cloneNode(true);
-                ghost.classList.add('touch-drag-ghost');
-                if (state.kind === 'subtask') ghost.classList.add('touch-drag-ghost--subtask');
-                ghost.style.width = `${rect.width}px`;
-                ghost.style.height = `${rect.height}px`;
-                ghost.removeAttribute('tabindex');
-                ghost.setAttribute('aria-hidden', 'true');
-                document.body.appendChild(ghost);
-                state.ghost = ghost;
-                positionGhost(state, state.startX, state.startY);
-
                 if (navigator.vibrate) navigator.vibrate(10);
             };
 
             const cleanupDrag = (state) => {
                 stopAutoScroll(state);
-                if (state.ghost) {
-                    state.ghost.remove();
-                    state.ghost = null;
-                }
                 state.el.classList.remove('dragging');
                 state.el.style.pointerEvents = '';
                 clearConversionHighlight(state);
@@ -922,9 +890,6 @@ class TaskManager {
                     timer: null,
                     autoScrollRaf: null,
                     moveRafScheduled: false,
-                    ghost: null,
-                    offsetX: 0,
-                    offsetY: 0,
                 };
 
                 state.timer = setTimeout(() => activateDrag(state), LONG_PRESS_MS);
@@ -1021,9 +986,7 @@ class TaskManager {
                     state.moveRafScheduled = true;
                     requestAnimationFrame(() => {
                         state.moveRafScheduled = false;
-                        if (this._touchDrag !== state || !state.active) return;
-                        positionGhost(state, state.lastX, state.lastY);
-                        processDragMove(state);
+                        if (this._touchDrag === state && state.active) processDragMove(state);
                     });
                 }
             }, { passive: false });
