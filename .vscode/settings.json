@@ -1,0 +1,11 @@
+{
+    "workbench.colorCustomizations": {
+        "activityBar.background": "#ff6b2b",
+        "titleBar.activeBackground": "#ff6b2b",
+        "titleBar.activeForeground": "#EEFCFE"
+    },
+    "cSpell.words": [
+        "airtable",
+        "highlightjs"
+    ]
+}
